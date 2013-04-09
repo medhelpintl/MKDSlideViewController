@@ -8,6 +8,8 @@
 
 #import "MKDSlideViewController.h"
 
+#import "UIColor+MHExtensions.h"
+
 @interface MKDSlideViewController ()
 
 @property (nonatomic, retain) UIViewController * mainViewController;
@@ -27,6 +29,7 @@
 
 @synthesize leftViewController = _leftViewController, rightViewController = _rightViewController;
 @synthesize rootViewController = _rootViewController;
+@synthesize rootNavViewController = _rootNavViewController;
 @synthesize panGesture = _panGesture, menuBarButtonItem = _menuBarButtonItem;
 @synthesize mainViewController = _mainViewController, mainContainerView = _mainContainerView, mainTapView = _mainTapView;
 
@@ -42,43 +45,42 @@
     return self;
 }
 
-- (void)didReceiveMemoryWarning
-{
-    // Releases the view if it doesn't have a superview.
-    [super didReceiveMemoryWarning];
-    
-    // Release any cached data, images, etc that aren't in use.
-}
-
 #pragma mark - View lifecycle
 
 // Implement loadView to create a view hierarchy programmatically, without using a nib.
 - (void)loadView
 {
-    UIView * containerView = [[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, 320.0, 460.0)];
+    UIWindow *window = [[UIApplication sharedApplication] keyWindow];
+    CGRect bounds = [[UIScreen mainScreen] bounds];
+    
+    DLog(@"Bounds: %@", [[UIScreen mainScreen] bounds]);
+    
+    UIView * containerView = [[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, 320.0, [[UIScreen mainScreen] bounds].size.height - 20)];
     containerView.autoresizingMask = UIViewAutoresizingFlexibleHeight|UIViewAutoresizingFlexibleWidth;
     containerView.backgroundColor = [UIColor viewFlipsideBackgroundColor];
     
     if( self.rootViewController )
     {
         // Wrap inside Navigation Controller
-        UINavigationController * navController = [[UINavigationController alloc] initWithRootViewController:self.rootViewController];
+        self.rootNavViewController = [[UINavigationController alloc] initWithRootViewController:self.rootViewController];
+        self.rootNavViewController.navigationBar.tintColor = [UIColor applicationTintColor];
         
-        [self setupPanGestureForView:navController.navigationBar];
+        [self setupPanGestureForView:self.rootNavViewController.navigationBar];
         
-        self.mainViewController = navController;
-        [navController release];
+        self.mainViewController = self.rootNavViewController;
+        
         [self addChildViewController:self.mainViewController];
         self.mainViewController.view.clipsToBounds = YES;
         
         // Add menu item
         if( self.menuBarButtonItem == nil )
-            _menuBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"ButtonMenu"] 
+            _menuBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"drawer_btn"] 
                                                                   style:UIBarButtonItemStyleBordered 
                                                                  target:self 
                                                                  action:@selector(showLeftViewController:)
                                   ];
         
+//        self.rootNavViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
         self.rootViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
         
         // Add layer shadow
@@ -98,21 +100,6 @@
     [containerView release];
 }
 
-/*
-// Implement viewDidLoad to do additional setup after loading the view, typically from a nib.
-- (void)viewDidLoad
-{
-    [super viewDidLoad];
-}
-*/
-
-- (void)viewDidUnload
-{
-    [super viewDidUnload];
-    // Release any retained subviews of the main view.
-    // e.g. self.myOutlet = nil;
-}
-
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
 {
     // Return YES for supported orientations
@@ -125,6 +112,7 @@
     [_rightViewController release];
     [_mainViewController release];
     [_rootViewController release];
+    [_rootNavViewController release];
     [_mainContainerView release];
     [_mainTapView release];
     
@@ -145,17 +133,33 @@
     
     if( self.leftViewController != nil )
     {
+        [self.leftViewController.view setFrame:CGRectMake(0, 0, self.leftViewController.view.frame.size.width, [[UIScreen mainScreen] bounds].size.height - 20)];
+        
         [self addChildViewController:self.leftViewController];
         [self.view addSubview:self.leftViewController.view];
     }
     
     if( self.rightViewController != nil )
     {
+        [self.rightViewController.view setFrame:CGRectMake(0, 0, self.rightViewController.view.frame.size.width, [[UIScreen mainScreen] bounds].size.height - 20)];
+
         [self addChildViewController:self.rightViewController];
         [self.view addSubview:self.rightViewController.view];
     }
     
     [self.view addSubview:self.mainViewController.view];
+}
+
+- (void) updateMainViewController:(UIViewController *)mainViewController
+{
+    mainViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
+    
+    [self.rootNavViewController setViewControllers:@[mainViewController]];
+}
+
+- (void) pushMainViewController:(UIViewController *)mainViewController
+{
+    [self.rootNavViewController pushViewController:mainViewController animated:YES];
 }
 
 #pragma mark - Panning
@@ -190,6 +194,12 @@
         // Update view frame
         CGRect newFrame = self.mainViewController.view.frame;
         newFrame.origin.x +=deltaX;
+        if (newFrame.origin.x > 0 && !self.leftViewController) {
+            newFrame.origin.x = 0;
+        } else if (newFrame.origin.x < 0 && !self.rightViewController) {
+            newFrame.origin.x = 0;
+        }
+        
         self.mainViewController.view.frame = newFrame;
         
         self.previousLocation = locationInView;
@@ -289,7 +299,14 @@
         } completion:^(BOOL finished) {
             [self removeTapViewOverlay];
         }];
-        
+    } else {
+        //fade transition
+        CATransition *transition = [CATransition animation];
+        transition.duration = 0.3;
+        transition.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
+        transition.type = kCATransitionFade;
+        [self.mainViewController.view.layer addAnimation:transition forKey:nil];
+
     }
 }
 

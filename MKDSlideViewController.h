@@ -17,10 +17,13 @@
 @property (nonatomic, retain) UIViewController * leftViewController;
 @property (nonatomic, retain) UIViewController * rightViewController;
 @property (nonatomic, retain) UIViewController * rootViewController;
+@property (nonatomic, retain) UINavigationController * rootNavViewController;
 
 @property (nonatomic, retain) UIBarButtonItem * menuBarButtonItem;
 
 - (id)initWithRootViewController:(UIViewController *)rootViewController;
+- (void) updateMainViewController:(UIViewController *)mainViewController;
+- (void) pushMainViewController:(UIViewController *)mainViewController;
 - (void)setLeftViewController:(UIViewController *)leftViewController rightViewController:(UIViewController *)rightViewController;
 
 - (IBAction)showLeftViewController:(id)sender;
