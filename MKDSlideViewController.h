@@ -24,8 +24,9 @@
 
 - (id)initWithRootViewController:(UIViewController *)rootViewController;
 - (void) updateMainViewController:(UIViewController *)mainViewController;
+- (void) updateMainViewControllers:(NSArray*) mainViewControllers;
 - (void) pushMainViewController:(UIViewController *)mainViewController;
-- (void)setLeftViewController:(UIViewController *)leftViewController rightViewController:(UIViewController *)rightViewController;
+- (void) setLeftViewController:(UIViewController *)leftViewController rightViewController:(UIViewController *)rightViewController;
 
 - (IBAction)showLeftViewController:(id)sender;
 - (IBAction)showRightViewController:(id)sender;

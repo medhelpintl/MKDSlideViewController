@@ -9,6 +9,7 @@
 #import "MKDSlideViewController.h"
 
 #import "UIColor+MHExtensions.h"
+#import "CustomNavigationBar.h"
 
 @interface MKDSlideViewController ()
 
@@ -50,11 +51,6 @@
 // Implement loadView to create a view hierarchy programmatically, without using a nib.
 - (void)loadView
 {
-    UIWindow *window = [[UIApplication sharedApplication] keyWindow];
-    CGRect bounds = [[UIScreen mainScreen] bounds];
-    
-    DLog(@"Bounds: %@", [[UIScreen mainScreen] bounds]);
-    
     UIView * containerView = [[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, 320.0, [[UIScreen mainScreen] bounds].size.height - 20)];
     containerView.autoresizingMask = UIViewAutoresizingFlexibleHeight|UIViewAutoresizingFlexibleWidth;
     containerView.backgroundColor = [UIColor viewFlipsideBackgroundColor];
@@ -63,7 +59,6 @@
     {
         // Wrap inside Navigation Controller
         self.rootNavViewController = [[UINavigationController alloc] initWithRootViewController:self.rootViewController];
-        self.rootNavViewController.navigationBar.tintColor = [UIColor applicationTintColor];
         
         [self setupPanGestureForView:self.rootNavViewController.navigationBar];
         
@@ -73,14 +68,16 @@
         self.mainViewController.view.clipsToBounds = YES;
         
         // Add menu item
-        if( self.menuBarButtonItem == nil )
-            _menuBarButtonItem = [[UIBarButtonItem alloc] initWithImage:[UIImage imageNamed:@"drawer_btn"] 
-                                                                  style:UIBarButtonItemStyleBordered 
-                                                                 target:self 
-                                                                 action:@selector(showLeftViewController:)
-                                  ];
+        if( self.menuBarButtonItem == nil ) {
+            UIButton *menuBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+            UIImage *menuImg = [UIImage imageNamed:@"drawer_btn"];
+            [menuBtn setImage:menuImg forState:UIControlStateNormal];
+            [menuBtn addTarget:self action:@selector(showLeftViewController:) forControlEvents:UIControlEventTouchUpInside];
+            [menuBtn setFrame:CGRectMake(0, 0, menuImg.size.width * 2, menuImg.size.height)];
+            [menuBtn setContentMode:UIViewContentModeCenter];
+            _menuBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:menuBtn];
+        }
         
-//        self.rootNavViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
         self.rootViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
         
         // Add layer shadow
@@ -152,9 +149,23 @@
 
 - (void) updateMainViewController:(UIViewController *)mainViewController
 {
+    [self updateMainViewControllers:@[mainViewController]];
+}
+
+- (void) updateMainViewControllers:(NSArray *)mainViewControllers
+{
+    UIViewController *mainViewController = [mainViewControllers objectAtIndex:0];
     mainViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
     
-    [self.rootNavViewController setViewControllers:@[mainViewController]];
+    BOOL animated = NO;
+    for (UIViewController *vc in mainViewControllers) {
+        if ([self.rootNavViewController.viewControllers containsObject:vc]) {
+            animated = YES;
+            break;
+        }
+    }
+    
+    [self.rootNavViewController setViewControllers:mainViewControllers animated:animated];
 }
 
 - (void) pushMainViewController:(UIViewController *)mainViewController
@@ -182,10 +193,15 @@
     else if( gesture.state == UIGestureRecognizerStateChanged )
     {
         // Decide, which view controller should be revealed
-        if( self.mainViewController.view.frame.origin.x <= 0.0f ) // left
-            [self.view sendSubviewToBack:self.leftViewController.view];
-        else 
-            [self.view sendSubviewToBack:self.rightViewController.view];
+        if( self.mainViewController.view.frame.origin.x <= 0.0f ) {// left
+            [self.view sendSubviewToBack:self.leftViewController.view]; // showing right
+            [self.rightViewController viewWillAppear:YES];
+            [self.rightViewController viewDidAppear:YES];
+        } else {
+            [self.view sendSubviewToBack:self.rightViewController.view]; // showing left
+            [self.leftViewController viewWillAppear:YES];
+            [self.leftViewController viewDidAppear:YES];
+        }
         
         // Calculate position offset
         CGPoint locationInView = [gesture translationInView:self.view];
@@ -309,34 +325,5 @@
 
     }
 }
-
-#pragma mark - Container View Controller
-
-/* // No need for override
-- (BOOL)automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers
-{
-    return [super automaticallyForwardAppearanceAndRotationMethodsToChildViewControllers];
-}
-
-- (void)addChildViewController:(UIViewController *)childController
-{
-    [super addChildViewController:childController];
-}
-
-- (void)removeFromParentViewController
-{
-    [super removeFromParentViewController];
-}
-
-- (void)willMoveToParentViewController:(UIViewController *)parent
-{
-    [super willMoveToParentViewController:parent];
-}
-
-- (void)didMoveToParentViewController:(UIViewController *)parent
-{
-    [super didMoveToParentViewController:parent];
-}
-*/
 
 @end
