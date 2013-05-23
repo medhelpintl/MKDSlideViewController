@@ -69,13 +69,7 @@
         
         // Add menu item
         if( self.menuBarButtonItem == nil ) {
-            UIButton *menuBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-            UIImage *menuImg = [UIImage imageNamed:@"drawer_btn"];
-            [menuBtn setImage:menuImg forState:UIControlStateNormal];
-            [menuBtn addTarget:self action:@selector(showLeftViewController:) forControlEvents:UIControlEventTouchUpInside];
-            [menuBtn setFrame:CGRectMake(0, 0, menuImg.size.width * 2, menuImg.size.height)];
-            [menuBtn setContentMode:UIViewContentModeCenter];
-            _menuBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:menuBtn];
+            _menuBarButtonItem = [UIBarButtonItem UIBarButtonItemWithImage:[UIImage imageNamed:@"drawer_btn"] target:self selector:@selector(showLeftViewController:)];
         }
         
         self.rootViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
