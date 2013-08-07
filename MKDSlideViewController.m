@@ -78,11 +78,11 @@
         CALayer * mainLayer = [self.mainViewController.view layer];
         mainLayer.masksToBounds = NO;
         CGPathRef pathRect = [UIBezierPath bezierPathWithRect:self.mainViewController.view.bounds].CGPath;
-        mainLayer.shadowColor = [UIColor blackColor].CGColor;
+        mainLayer.shadowColor = [UIColor lightGrayColor].CGColor;
         mainLayer.shadowOffset = CGSizeMake(0.0, 0.0);
         mainLayer.shadowOpacity = 1.0f;
         mainLayer.shadowPath = pathRect;
-        mainLayer.shadowRadius = 20.0f;
+        mainLayer.shadowRadius = 15.0f;
         
         [containerView addSubview:self.mainViewController.view];
     }
