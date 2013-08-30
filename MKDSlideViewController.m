@@ -19,6 +19,8 @@
 @property (nonatomic, retain) UIPanGestureRecognizer * panGesture;
 @property (nonatomic) CGPoint previousLocation;
 
+@property (nonatomic, assign) CGRect originalFrame;
+
 - (void)setupPanGestureForView:(UIView *)view;
 - (void)panGesture:(UIPanGestureRecognizer *)gesture;
 - (void)addTapViewOverlay;
@@ -63,6 +65,7 @@
         [self setupPanGestureForView:self.rootNavViewController.navigationBar];
         
         self.mainViewController = self.rootNavViewController;
+        self.originalFrame = self.mainViewController.view.frame;
         
         [self addChildViewController:self.mainViewController];
         self.mainViewController.view.clipsToBounds = YES;
@@ -78,11 +81,11 @@
         CALayer * mainLayer = [self.mainViewController.view layer];
         mainLayer.masksToBounds = NO;
         CGPathRef pathRect = [UIBezierPath bezierPathWithRect:self.mainViewController.view.bounds].CGPath;
-        mainLayer.shadowColor = [UIColor lightGrayColor].CGColor;
+        mainLayer.shadowColor = [UIColor blackColor].CGColor;
         mainLayer.shadowOffset = CGSizeMake(0.0, 0.0);
         mainLayer.shadowOpacity = 1.0f;
         mainLayer.shadowPath = pathRect;
-        mainLayer.shadowRadius = 15.0f;
+        mainLayer.shadowRadius = 20.0f;
         
         [containerView addSubview:self.mainViewController.view];
     }
@@ -200,20 +203,22 @@
     }
     else if( gesture.state == UIGestureRecognizerStateChanged )
     {
-        // Decide, which view controller should be revealed
-        if( self.mainViewController.view.frame.origin.x <= 0.0f ) {// left
-            [self.view sendSubviewToBack:self.leftViewController.view]; // showing right
-            [self.rightViewController viewWillAppear:YES];
-            [self.rightViewController viewDidAppear:YES];
-        } else {
-            [self.view sendSubviewToBack:self.rightViewController.view]; // showing left
-            [self.leftViewController viewWillAppear:YES];
-            [self.leftViewController viewDidAppear:YES];
-        }
-        
         // Calculate position offset
         CGPoint locationInView = [gesture translationInView:self.view];
         CGFloat deltaX = locationInView.x - self.previousLocation.x;
+        
+        // Decide, which view controller should be revealed
+        if (self.mainViewController.view.frame.origin.x == 0.0f) {
+            if( deltaX < 0.0f ) {// left
+                [self.view sendSubviewToBack:self.leftViewController.view]; // showing right
+                [self.rightViewController viewWillAppear:YES];
+                [self.rightViewController viewDidAppear:YES];
+            } else if (deltaX > 0.0f) {
+                [self.view sendSubviewToBack:self.rightViewController.view]; // showing left
+                [self.leftViewController viewWillAppear:YES];
+                [self.leftViewController viewDidAppear:YES];
+            }
+        }
         
         // Update view frame
         CGRect newFrame = self.mainViewController.view.frame;
@@ -290,12 +295,25 @@
 {
     [self.view sendSubviewToBack:self.rightViewController.view];
     
-    [UIView animateWithDuration:kSlideSpeed animations:^{
+    [self.leftViewController viewWillAppear:YES];
+    
+    [UIView animateWithDuration:kSlideSpeed delay:0.0f options:UIViewAnimationOptionCurveEaseOut animations:^(void){
+
         CGRect theFrame = self.mainViewController.view.frame;
+
+//        CGSize scales = CGSizeMake(.5, .5);
+//        CGPoint offset = CGPointMake(CGRectGetMidX(theFrame) - CGRectGetMidX(theFrame), CGRectGetMidY(theFrame) - CGRectGetMidY(theFrame));
+//        CGAffineTransform transform = CGAffineTransformMake(scales.width, 0, 0, scales.height, offset.x, offset.y);
+//        self.mainViewController.view.transform = transform;
+        
+        theFrame = self.mainViewController.view.frame;
+        theFrame.origin.x = self.leftViewController.view.frame.size.width - kSlideOverlapWidth;
+//        self.mainViewController.view.frame = transformedFrame;
         theFrame.origin.x = theFrame.size.width - kSlideOverlapWidth;
         self.mainViewController.view.frame = theFrame;
     } completion:^(BOOL finished) {
         [self addTapViewOverlay];
+        [self.leftViewController viewDidAppear:YES];
     }];
 }
 
@@ -316,10 +334,18 @@
 {
     if( self.mainViewController.view.frame.origin.x != CGPointZero.x )
     {
-        [UIView animateWithDuration:kSlideSpeed animations:^{
-            CGRect theFrame = self.mainViewController.view.frame;
-            theFrame.origin = CGPointZero;
-            self.mainViewController.view.frame = theFrame;
+        [UIView animateWithDuration:kSlideSpeed delay:0.0f options:UIViewAnimationOptionCurveEaseOut animations:^(void){
+            CGRect fromRect = self.mainViewController.view.frame;
+            //            theFrame.origin = CGPointZero;
+            CGRect viewRect = self.originalFrame;
+            
+            //            CGSize scales = CGSizeMake(viewRect.size.width/fromRect.size.width, viewRect.size.height/fromRect.size.height);
+            CGSize scales = CGSizeMake(1, 1);
+            CGPoint offset = CGPointMake(CGRectGetMidX(viewRect) - CGRectGetMidX(fromRect), CGRectGetMidY(viewRect) - CGRectGetMidY(fromRect));
+            CGAffineTransform transform = CGAffineTransformMake(scales.width, 0, 0, scales.height, offset.x, offset.y);
+            
+            self.mainViewController.view.transform = transform;
+            self.mainViewController.view.frame = self.originalFrame; //theFrame;
         } completion:^(BOOL finished) {
             [self removeTapViewOverlay];
         }];

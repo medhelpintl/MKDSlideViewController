@@ -10,7 +10,7 @@
 #import <UIKit/UIKit.h>
 #import <QuartzCore/QuartzCore.h>  // Don't forget to add the QuartzCore Framework to your project
 
-#define kSlideSpeed 0.3f
+#define kSlideSpeed 0.15f
 #define kSlideOverlapWidth 52.0f;
 
 @interface MKDSlideViewController : UIViewController
