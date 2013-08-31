@@ -101,11 +101,18 @@
     [self.mainViewController viewWillAppear:animated];
 }
 
+BOOL firstTime = YES;
+
 - (void) viewDidAppear:(BOOL)animated
 {
     [super viewDidAppear:animated];
     
     [self.mainViewController viewDidAppear:animated];
+    
+    if (firstTime) {
+        self.originalFrame = self.mainViewController.view.frame;
+        firstTime = NO;
+    }
 }
 
 - (BOOL)shouldAutorotateToInterfaceOrientation:(UIInterfaceOrientation)interfaceOrientation
@@ -340,11 +347,11 @@
             CGRect viewRect = self.originalFrame;
             
             //            CGSize scales = CGSizeMake(viewRect.size.width/fromRect.size.width, viewRect.size.height/fromRect.size.height);
-            CGSize scales = CGSizeMake(1, 1);
-            CGPoint offset = CGPointMake(CGRectGetMidX(viewRect) - CGRectGetMidX(fromRect), CGRectGetMidY(viewRect) - CGRectGetMidY(fromRect));
-            CGAffineTransform transform = CGAffineTransformMake(scales.width, 0, 0, scales.height, offset.x, offset.y);
-            
-            self.mainViewController.view.transform = transform;
+//            CGSize scales = CGSizeMake(1, 1);
+//            CGPoint offset = CGPointMake(CGRectGetMidX(viewRect) - CGRectGetMidX(fromRect), CGRectGetMidY(viewRect) - CGRectGetMidY(fromRect));
+//            CGAffineTransform transform = CGAffineTransformMake(scales.width, 0, 0, scales.height, offset.x, offset.y);
+//            
+//            self.mainViewController.view.transform = transform;
             self.mainViewController.view.frame = self.originalFrame; //theFrame;
         } completion:^(BOOL finished) {
             [self removeTapViewOverlay];
