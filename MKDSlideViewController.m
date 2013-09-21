@@ -101,7 +101,7 @@
     [self.mainViewController viewWillAppear:animated];
 }
 
-BOOL firstTime = YES;
+BOOL firstTimeSlideVC = YES;
 
 - (void) viewDidAppear:(BOOL)animated
 {
@@ -109,9 +109,9 @@ BOOL firstTime = YES;
     
     [self.mainViewController viewDidAppear:animated];
     
-    if (firstTime) {
+    if (firstTimeSlideVC) {
         self.originalFrame = self.mainViewController.view.frame;
-        firstTime = NO;
+        firstTimeSlideVC = NO;
     }
 }
 
