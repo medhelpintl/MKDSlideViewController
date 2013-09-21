@@ -363,7 +363,8 @@ BOOL firstTime = YES;
         transition.timingFunction = [CAMediaTimingFunction functionWithName:kCAMediaTimingFunctionEaseInEaseOut];
         transition.type = kCATransitionFade;
         [self.mainViewController.view.layer addAnimation:transition forKey:nil];
-
+        
+        [self removeTapViewOverlay];
     }
 }
 
