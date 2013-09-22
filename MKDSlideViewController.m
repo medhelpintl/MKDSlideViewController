@@ -21,7 +21,7 @@
 
 @property (nonatomic, assign) CGRect originalFrame;
 
-- (void)setupPanGestureForView:(UIView *)view;
+//- (void)setupPanGestureForView:(UIView *)view;
 - (void)panGesture:(UIPanGestureRecognizer *)gesture;
 - (void)addTapViewOverlay;
 - (void)removeTapViewOverlay;
