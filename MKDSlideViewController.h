@@ -32,6 +32,8 @@
 - (IBAction)showRightViewController:(id)sender;
 - (IBAction)showMainViewController:(id)sender;
 
+- (void)setupPanGestureForView:(UIView *)view;
+
 @end
 
 @protocol MKDSlideViewControllerDelegate <NSObject>
