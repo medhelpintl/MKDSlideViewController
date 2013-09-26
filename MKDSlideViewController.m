@@ -56,7 +56,7 @@
     UIView * containerView = [[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, 320.0, [[UIScreen mainScreen] bounds].size.height - 20)];
     containerView.autoresizingMask = UIViewAutoresizingFlexibleHeight|UIViewAutoresizingFlexibleWidth;
     containerView.backgroundColor = [UIColor viewFlipsideBackgroundColor];
-    
+
     if( self.rootViewController )
     {
         // Wrap inside Navigation Controller
@@ -65,6 +65,13 @@
         [self setupPanGestureForView:self.rootNavViewController.navigationBar];
         
         self.mainViewController = self.rootNavViewController;
+        
+        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
+            self.mainViewController.view.frame = containerView.bounds;
+            self.mainViewController.view.y += 20;
+            self.mainViewController.view.height -= 20;
+        }
+        
         self.originalFrame = self.mainViewController.view.frame;
         
         [self addChildViewController:self.mainViewController];
@@ -92,6 +99,11 @@
     
     self.view = containerView;
     [containerView release];
+    
+    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
+        self.view.y += 20;
+        self.view.height -= 20;
+    }
 }
 
 - (void) viewWillAppear:(BOOL)animated
@@ -150,6 +162,11 @@ BOOL firstTimeSlideVC = YES;
     {
         [self.leftViewController.view setFrame:CGRectMake(0, 0, self.leftViewController.view.frame.size.width, [[UIScreen mainScreen] bounds].size.height - 20)];
         
+        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
+            self.leftViewController.view.y += 20;
+            self.leftViewController.view.height -= 40;
+        }
+        
         [self addChildViewController:self.leftViewController];
         [self.view addSubview:self.leftViewController.view];
     }
@@ -157,6 +174,11 @@ BOOL firstTimeSlideVC = YES;
     if( self.rightViewController != nil )
     {
         [self.rightViewController.view setFrame:CGRectMake(0, 0, self.rightViewController.view.frame.size.width, [[UIScreen mainScreen] bounds].size.height - 20)];
+
+        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
+            self.rightViewController.view.y += 20;
+            self.rightViewController.view.height -= 40;
+        }
 
         [self addChildViewController:self.rightViewController];
         [self.view addSubview:self.rightViewController.view];
