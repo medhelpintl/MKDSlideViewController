@@ -324,7 +324,14 @@ BOOL firstTimeSlideVC = YES;
 {
     [self.view sendSubviewToBack:self.rightViewController.view];
     
-    [self.leftViewController viewWillAppear:YES];
+    BOOL needsLifeCycle = NO;
+    if (self.mainViewController.view.frame.origin.x == 0) {
+        needsLifeCycle = YES;
+    }
+    
+    if (needsLifeCycle) {
+        [self.leftViewController viewWillAppear:YES];
+    }
     
     [UIView animateWithDuration:kSlideSpeed delay:0.0f options:UIViewAnimationOptionCurveEaseOut animations:^(void){
 
@@ -342,7 +349,9 @@ BOOL firstTimeSlideVC = YES;
         self.mainViewController.view.frame = theFrame;
     } completion:^(BOOL finished) {
         [self addTapViewOverlay];
-        [self.leftViewController viewDidAppear:YES];
+        if (needsLifeCycle) {
+            [self.leftViewController viewDidAppear:YES];
+        }
     }];
 }
 
