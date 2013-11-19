@@ -324,6 +324,11 @@ BOOL firstTimeSlideVC = YES;
 {
     [self.view sendSubviewToBack:self.rightViewController.view];
     
+    // dismiss the keyboard if it is showing
+    UIView *activeField = [[[UIApplication sharedApplication] keyWindow] findFirstResponder];
+    if (activeField)
+        [activeField resignFirstResponder];
+    
     BOOL needsLifeCycle = NO;
     if (self.mainViewController.view.frame.origin.x == 0) {
         needsLifeCycle = YES;
