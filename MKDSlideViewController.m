@@ -21,7 +21,6 @@
 
 @property (nonatomic, assign) CGRect originalFrame;
 
-//- (void)setupPanGestureForView:(UIView *)view;
 - (void)panGesture:(UIPanGestureRecognizer *)gesture;
 - (void)addTapViewOverlay;
 - (void)removeTapViewOverlay;
@@ -338,18 +337,17 @@ BOOL firstTimeSlideVC = YES;
         [self.leftViewController viewWillAppear:YES];
     }
     
-    [UIView animateWithDuration:kSlideSpeed delay:0.0f options:UIViewAnimationOptionCurveEaseOut animations:^(void){
+    UIViewAnimationOptions options = UIViewAnimationOptionCurveEaseOut;
+    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
+        options = (7 << 16);
+    }
+    
+    [UIView animateWithDuration:kSlideSpeed delay:0.0f options:options animations:^(void){
 
         CGRect theFrame = self.mainViewController.view.frame;
 
-//        CGSize scales = CGSizeMake(.5, .5);
-//        CGPoint offset = CGPointMake(CGRectGetMidX(theFrame) - CGRectGetMidX(theFrame), CGRectGetMidY(theFrame) - CGRectGetMidY(theFrame));
-//        CGAffineTransform transform = CGAffineTransformMake(scales.width, 0, 0, scales.height, offset.x, offset.y);
-//        self.mainViewController.view.transform = transform;
-        
         theFrame = self.mainViewController.view.frame;
         theFrame.origin.x = self.leftViewController.view.frame.size.width - kSlideOverlapWidth;
-//        self.mainViewController.view.frame = transformedFrame;
         theFrame.origin.x = theFrame.size.width - kSlideOverlapWidth;
         self.mainViewController.view.frame = theFrame;
     } completion:^(BOOL finished) {
@@ -364,7 +362,12 @@ BOOL firstTimeSlideVC = YES;
 {
     [self.view sendSubviewToBack:self.leftViewController.view];  // FIXME: Correct timing, when sending to back
     
-    [UIView animateWithDuration:kSlideSpeed animations:^{
+    UIViewAnimationOptions options = UIViewAnimationOptionCurveEaseOut;
+    if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
+        options = (7 << 16);
+    }
+    
+    [UIView animateWithDuration:kSlideSpeed delay:0.0f options:options animations:^{
         CGRect theFrame = self.mainViewController.view.frame;
         theFrame.origin.x = -theFrame.size.width + kSlideOverlapWidth;
         self.mainViewController.view.frame = theFrame;
@@ -377,17 +380,12 @@ BOOL firstTimeSlideVC = YES;
 {
     if( self.mainViewController.view.frame.origin.x != CGPointZero.x )
     {
-        [UIView animateWithDuration:kSlideSpeed delay:0.0f options:UIViewAnimationOptionCurveEaseOut animations:^(void){
-            CGRect fromRect = self.mainViewController.view.frame;
-            //            theFrame.origin = CGPointZero;
-            CGRect viewRect = self.originalFrame;
-            
-            //            CGSize scales = CGSizeMake(viewRect.size.width/fromRect.size.width, viewRect.size.height/fromRect.size.height);
-//            CGSize scales = CGSizeMake(1, 1);
-//            CGPoint offset = CGPointMake(CGRectGetMidX(viewRect) - CGRectGetMidX(fromRect), CGRectGetMidY(viewRect) - CGRectGetMidY(fromRect));
-//            CGAffineTransform transform = CGAffineTransformMake(scales.width, 0, 0, scales.height, offset.x, offset.y);
-//            
-//            self.mainViewController.view.transform = transform;
+        UIViewAnimationOptions options = UIViewAnimationOptionCurveEaseOut;
+        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
+            options = (7 << 16);
+        }
+        
+        [UIView animateWithDuration:kSlideSpeed delay:0.0f options:options animations:^(void){
             self.mainViewController.view.frame = self.originalFrame; //theFrame;
         } completion:^(BOOL finished) {
             [self removeTapViewOverlay];
