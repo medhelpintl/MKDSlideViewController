@@ -17,6 +17,8 @@
 @property (nonatomic, retain) UIView * mainContainerView;
 @property (nonatomic, retain) UIView * mainTapView;
 @property (nonatomic, retain) UIPanGestureRecognizer * panGesture;
+
+@property (nonatomic, assign) CGPoint dragTrackingPoint;
 @property (nonatomic) CGPoint previousLocation;
 
 @property (nonatomic, assign) CGRect originalFrame;
@@ -24,6 +26,12 @@
 - (void)panGesture:(UIPanGestureRecognizer *)gesture;
 - (void)addTapViewOverlay;
 - (void)removeTapViewOverlay;
+
+- (void) transformMainView:(UIView*)view forPercentage:(CGFloat)percentage;
+- (void) transformLeftView:(UIView*)view forPercentage:(CGFloat)percentage;
+- (void) transformRightView:(UIView*)view forPercentage:(CGFloat)percentage;
+- (CGFloat) percentageForCoordinate:(CGPoint)dragLocation;
+- (CGPoint) coordinateForPercentage:(CGFloat)percentage;
 
 @end
 
@@ -103,6 +111,12 @@
         self.view.y += 20;
         self.view.height -= 20;
     }
+    
+    // Set Locations
+    self.dragTrackingPoint = CGPointZero;
+    [self transformLeftView:self.leftViewController.view forPercentage:0];
+    [self transformRightView:self.rightViewController.view forPercentage:0];
+    [self transformMainView:self.mainViewController.view forPercentage:0];
 }
 
 - (void) viewWillAppear:(BOOL)animated
@@ -204,12 +218,67 @@ BOOL firstTimeSlideVC = YES;
         }
     }
     
-    [self.rootNavViewController setViewControllers:mainViewControllers animated:animated];
+    
+    if (animated) {
+        [self.rootNavViewController setViewControllers:mainViewControllers animated:animated];
+        [self showMainViewController:nil];
+    } else {
+        //
+        [self verticalTransition:^{
+            [self.rootNavViewController setViewControllers:mainViewControllers animated:animated];
+        }];
+    }
 }
 
 - (void) pushMainViewController:(UIViewController *)mainViewController
 {
-    [self.rootNavViewController pushViewController:mainViewController animated:YES];
+    if (self.dragTrackingPoint.x == CGPointZero.x) {
+        [self.rootNavViewController pushViewController:mainViewController animated:YES];
+    } else {
+        //
+        [self verticalTransition:^{
+            [self.rootNavViewController pushViewController:mainViewController animated:YES];
+        }];
+    }
+}
+
+- (void) verticalTransition:(void (^)(void))block;
+{
+    if (self.dragTrackingPoint.x != CGPointZero.x) {
+        CGFloat distance = self.view.height * 2;
+        
+        UIViewAnimationOptions options = UIViewAnimationOptionCurveEaseOut;
+        if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
+            options = (7 << 16);
+        }
+        
+        CATransform3D originalTransform = self.mainViewController.view.layer.transform;
+        __block CATransform3D transform = originalTransform;
+        
+        [UIView animateWithDuration:(0.1f) delay:0.0f options:options animations:^(void){
+//            CGFloat currentY = self.mainViewController.view.center.y;
+            
+            transform = CATransform3DTranslate(transform, 0, distance, 0);
+            self.mainViewController.view.layer.transform = transform;
+        } completion:^(BOOL finished) {
+            // TRANSITION
+            block();
+            
+            // Update Location
+            transform = CATransform3DTranslate(transform, 0, - 2 * distance, 0);
+            self.mainViewController.view.layer.transform = transform;
+            
+            [UIView animateWithDuration:(0.1f) delay:0.0f options:options animations:^(void){
+                transform = CATransform3DTranslate(transform, 0, distance, 0);
+                self.mainViewController.view.layer.transform = transform;
+
+            } completion:^(BOOL finished) {
+                [self showMainViewController:nil];
+            }];
+        }];
+    } else {
+        [self showMainViewController:nil];
+    }
 }
 
 #pragma mark - Panning
@@ -236,7 +305,7 @@ BOOL firstTimeSlideVC = YES;
         CGFloat deltaX = locationInView.x - self.previousLocation.x;
         
         // Decide, which view controller should be revealed
-        if (self.mainViewController.view.frame.origin.x == 0.0f) {
+        if (self.dragTrackingPoint.x == 0.0f) {
             if( deltaX < 0.0f ) {// left
                 [self.view sendSubviewToBack:self.leftViewController.view]; // showing right
                 [self.rightViewController viewWillAppear:YES];
@@ -249,24 +318,31 @@ BOOL firstTimeSlideVC = YES;
         }
         
         // Update view frame
-        CGRect newFrame = self.mainViewController.view.frame;
-        newFrame.origin.x +=deltaX;
-        if (newFrame.origin.x > 0 && !self.leftViewController) {
-            newFrame.origin.x = 0;
-        } else if (newFrame.origin.x < 0 && !self.rightViewController) {
-            newFrame.origin.x = 0;
+//        CGRect newFrame = self.mainViewController.view.frame;
+//        newFrame.origin.x +=deltaX;
+        CGPoint tracking = self.dragTrackingPoint;
+        tracking.x += deltaX;
+
+        if (tracking.x > 0 && !self.leftViewController) {
+            tracking.x = 0;
+        } else if (tracking.x < 0 && !self.rightViewController) {
+            tracking.x = 0;
         }
-        
-        self.mainViewController.view.frame = newFrame;
-        
+
+        self.dragTrackingPoint = tracking;
         self.previousLocation = locationInView;
+        
+        CGFloat percentage = [self percentageForCoordinate:self.dragTrackingPoint];
+        [self transformMainView:self.mainViewController.view forPercentage:percentage];
+        [self transformLeftView:self.leftViewController.view forPercentage:percentage];
+        
     }
     else if( (gesture.state == UIGestureRecognizerStateEnded) || (gesture.state == UIGestureRecognizerStateCancelled) )
     {
-        CGFloat xOffset = self.mainViewController.view.frame.origin.x;
+        CGFloat xOffset = self.dragTrackingPoint.x;
 
         // snap to zero
-        if( (xOffset <= (self.mainViewController.view.frame.size.width/2)) && (xOffset >= (-self.mainViewController.view.frame.size.width/2)) )
+        if( (xOffset <= (self.view.frame.size.width/2)) && (xOffset >= (-self.view.frame.size.width/2)) )
         {
             [self showMainViewController:nil];
         }
@@ -329,7 +405,7 @@ BOOL firstTimeSlideVC = YES;
         [activeField resignFirstResponder];
     
     BOOL needsLifeCycle = NO;
-    if (self.mainViewController.view.frame.origin.x == 0) {
+    if (self.dragTrackingPoint.x == 0) {
         needsLifeCycle = YES;
     }
     
@@ -343,13 +419,17 @@ BOOL firstTimeSlideVC = YES;
     }
     
     [UIView animateWithDuration:kSlideSpeed delay:0.0f options:options animations:^(void){
-
-        CGRect theFrame = self.mainViewController.view.frame;
-
-        theFrame = self.mainViewController.view.frame;
-        theFrame.origin.x = self.leftViewController.view.frame.size.width - kSlideOverlapWidth;
-        theFrame.origin.x = theFrame.size.width - kSlideOverlapWidth;
-        self.mainViewController.view.frame = theFrame;
+        CGPoint point = self.dragTrackingPoint;
+        point.x = self.view.width - kSlideOverlapWidth;
+        self.dragTrackingPoint = point;
+//        CGRect theFrame = self.mainViewController.view.frame;
+//
+//        theFrame = self.mainViewController.view.frame;
+//        theFrame.origin.x = self.leftViewController.view.frame.size.width - kSlideOverlapWidth;
+//        theFrame.origin.x = theFrame.size.width - kSlideOverlapWidth;
+//        self.mainViewController.view.frame = theFrame;
+        [self transformMainView:self.mainViewController.view forPercentage:100];
+        [self transformLeftView:self.leftViewController.view forPercentage:100];
     } completion:^(BOOL finished) {
         [self addTapViewOverlay];
         if (needsLifeCycle) {
@@ -378,7 +458,7 @@ BOOL firstTimeSlideVC = YES;
 
 - (IBAction)showMainViewController:(id)sender
 {
-    if( self.mainViewController.view.frame.origin.x != CGPointZero.x )
+    if(self.dragTrackingPoint.x != CGPointZero.x )
     {
         UIViewAnimationOptions options = UIViewAnimationOptionCurveEaseOut;
         if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
@@ -386,7 +466,10 @@ BOOL firstTimeSlideVC = YES;
         }
         
         [UIView animateWithDuration:kSlideSpeed delay:0.0f options:options animations:^(void){
-            self.mainViewController.view.frame = self.originalFrame; //theFrame;
+            self.dragTrackingPoint = CGPointZero;
+
+            [self transformMainView:self.mainViewController.view forPercentage:0];
+            [self transformLeftView:self.leftViewController.view forPercentage:0];
         } completion:^(BOOL finished) {
             [self removeTapViewOverlay];
         }];
@@ -400,6 +483,66 @@ BOOL firstTimeSlideVC = YES;
         
         [self removeTapViewOverlay];
     }
+}
+
+#pragma mark -
+#pragma mark TRANFORMS
+
+- (void) transformLeftView:(UIView *)view forPercentage:(CGFloat)percentage
+{
+    CGFloat scale = .9f + .1 * (percentage / 100);
+    
+    CATransform3D transform = CATransform3DScale(CATransform3DIdentity, scale, scale, 1);
+    
+    //transform view
+    view.layer.transform = transform;
+
+    view.userInteractionEnabled = percentage == 100.0f;
+}
+
+- (void) transformMainView:(UIView *)view forPercentage:(CGFloat)percentage
+{
+    CGFloat destinationWidth = self.view.width - kSlideOverlapWidth;
+    destinationWidth -= 110;
+    CGFloat currentLocation = MIN(destinationWidth, (percentage / 100) * destinationWidth);
+
+//    CGFloat affineAmount = .4 * (percentage / 100);
+//    CATransform3D transformAffine = CATransform3DMakeAffineTransform(CGAffineTransformMake(1, affineAmount, 0, 1, affineAmount, 0));
+//
+    CATransform3D transform = CATransform3DTranslate(CATransform3DIdentity, currentLocation, 0, 0);
+    
+    // Shrink
+    CGFloat scale = 1 - (.6 * (percentage / 100));
+    transform = CATransform3DScale(transform, scale, scale, 1);
+    
+//    // Rotate
+//    CGFloat rotation = (M_PI_4) * (percentage / 100);
+//    
+//    transform = CATransform3DRotate(transform, rotation, 0, 1, 0);
+//    // go back too...
+//    CGFloat background = -100 * (percentage / 100);
+//    transform = CATransform3DTranslate(transform, 0, 0, background);
+    
+    view.layer.transform = transform;
+}
+
+- (void) transformRightView:(UIView *)view forPercentage:(CGFloat)percentage
+{
+    
+}
+
+- (CGFloat) percentageForCoordinate:(CGPoint)dragLocation
+{
+    CGFloat x = dragLocation.x;
+    CGFloat actionableWidth = self.view.width - kSlideOverlapWidth;
+    CGFloat percentage = 100 * MIN(1, x / actionableWidth);
+    return percentage;
+}
+
+// TODO
+- (CGPoint) coordinateForPercentage:(CGFloat)percentage
+{
+    return CGPointZero;
 }
 
 @end
