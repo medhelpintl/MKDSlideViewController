@@ -244,7 +244,7 @@ BOOL firstTimeSlideVC = YES;
 
 - (void) verticalTransition:(void (^)(void))block;
 {
-    if (self.dragTrackingPoint.x != CGPointZero.x) {
+    if (self.dragTrackingPoint.x != CGPointZero.x && NO) {
         CGFloat distance = self.view.height * 2;
         
         UIViewAnimationOptions options = UIViewAnimationOptionCurveEaseOut;
@@ -277,6 +277,7 @@ BOOL firstTimeSlideVC = YES;
             }];
         }];
     } else {
+        block();
         [self showMainViewController:nil];
     }
 }
@@ -528,7 +529,7 @@ BOOL firstTimeSlideVC = YES;
 - (void) transformMainView:(UIView *)view forPercentage:(CGFloat)percentage
 {
     CGFloat destinationWidth = self.view.width - kSlideOverlapWidth;
-    destinationWidth -= 110;
+//    destinationWidth -= 110;
     CGFloat currentLocation = MIN(destinationWidth, (percentage / 100) * destinationWidth);
 
 //    CGFloat affineAmount = .4 * (percentage / 100);
@@ -537,8 +538,8 @@ BOOL firstTimeSlideVC = YES;
     CATransform3D transform = CATransform3DTranslate(CATransform3DIdentity, currentLocation, 0, 0);
     
     // Shrink
-    CGFloat scale = 1 - (.6 * (percentage / 100));
-    transform = CATransform3DScale(transform, scale, scale, 1);
+//    CGFloat scale = 1 - (.6 * (percentage / 100));
+//    transform = CATransform3DScale(transform, scale, scale, 1);
     
 //    // Rotate
 //    CGFloat rotation = (M_PI_4) * (percentage / 100);
