@@ -490,6 +490,31 @@ BOOL firstTimeSlideVC = YES;
 
 - (void) transformLeftView:(UIView *)view forPercentage:(CGFloat)percentage
 {
+    [self applyYBasedTransformToView:view atYOffset:view.y forPercentage:percentage];
+}
+
+- (void) applyYBasedTransformToView:(UIView*) view atYOffset:(CGFloat)yOffset forPercentage:(CGFloat) percentage
+{
+    if (view.subviews.count == 0 || [view isKindOfClass:[UITableViewCell class]]) {
+//        DLog(@"Starting at: %f", view.x);
+        // Apply Transform
+        CGFloat y = view.y + yOffset;
+        CGFloat half = y / 3;
+        y -= half;
+        y = half - ((percentage / 100) * half);
+        
+//        DLog(@"TRanslate: %f", y);
+        
+        CATransform3D transform = CATransform3DTranslate(CATransform3DIdentity, -y, 0, 0);
+        view.layer.transform = transform;
+    } else {
+        for (UIView *subview in view.subviews) {
+            [self applyYBasedTransformToView:subview atYOffset:view.y + yOffset forPercentage:percentage];
+        }
+    }
+}
+
+- (void) transformScaleLeftView:(UIView*)view forPercentage:(CGFloat) percentage {
     CGFloat scale = .9f + .1 * (percentage / 100);
     
     CATransform3D transform = CATransform3DScale(CATransform3DIdentity, scale, scale, 1);
