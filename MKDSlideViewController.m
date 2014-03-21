@@ -491,7 +491,7 @@ BOOL firstTimeSlideVC = YES;
 
 - (void) transformLeftView:(UIView *)view forPercentage:(CGFloat)percentage
 {
-    [self applyYBasedTransformToView:view atYOffset:view.y forPercentage:percentage];
+//    [self applyYBasedTransformToView:view atYOffset:view.y forPercentage:percentage];
 }
 
 - (void) applyYBasedTransformToView:(UIView*) view atYOffset:(CGFloat)yOffset forPercentage:(CGFloat) percentage
