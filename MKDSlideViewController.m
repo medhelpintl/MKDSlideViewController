@@ -16,12 +16,13 @@
 @property (nonatomic, retain) UIViewController * mainViewController;
 @property (nonatomic, retain) UIView * mainContainerView;
 @property (nonatomic, retain) UIView * mainTapView;
+// GESTURE
 @property (nonatomic, retain) UIPanGestureRecognizer * panGesture;
 @property (nonatomic) CGPoint previousLocation;
+@property (nonatomic, assign) BOOL gestureEnabled;
 
 @property (nonatomic, assign) CGRect originalFrame;
 
-//- (void)setupPanGestureForView:(UIView *)view;
 - (void)panGesture:(UIPanGestureRecognizer *)gesture;
 - (void)addTapViewOverlay;
 - (void)removeTapViewOverlay;
@@ -44,6 +45,9 @@
     if (self)
     {
         self.rootViewController = rootViewController;
+        
+        // Gesture
+        self.gestureEnabled = YES;
     }
     return self;
 }
@@ -94,6 +98,9 @@
         mainLayer.shadowPath = pathRect;
         mainLayer.shadowRadius = 20.0f;
         
+        // Resize
+        self.mainViewController.view.autoresizingMask = UIViewAutoresizingNone;
+        
         [containerView addSubview:self.mainViewController.view];
     }
     
@@ -111,6 +118,10 @@
     [super viewWillAppear:animated];
     
     [self.mainViewController viewWillAppear:animated];
+    
+    // Orient
+    UIInterfaceOrientation interfaceOrientation = self.interfaceOrientation;
+    [self willRotateToInterfaceOrientation:interfaceOrientation duration:0.3f];
 }
 
 BOOL firstTimeSlideVC = YES;
@@ -167,6 +178,12 @@ BOOL firstTimeSlideVC = YES;
             self.leftViewController.view.height -= 40;
         }
         
+        // iPad?
+        if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+            self.leftViewController.view.width = 300;
+            self.leftViewController.view.autoresizingMask = UIViewAutoresizingFlexibleHeight;
+        }
+        
         [self addChildViewController:self.leftViewController];
         [self.view addSubview:self.leftViewController.view];
     }
@@ -195,7 +212,10 @@ BOOL firstTimeSlideVC = YES;
 - (void) updateMainViewControllers:(NSArray *)mainViewControllers
 {
     UIViewController *mainViewController = [mainViewControllers objectAtIndex:0];
-    mainViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
+
+    if (self.gestureEnabled) {
+        mainViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
+    }
     
     BOOL animated = NO;
     for (UIViewController *vc in mainViewControllers) {
@@ -226,6 +246,10 @@ BOOL firstTimeSlideVC = YES;
 
 - (void)panGesture:(UIPanGestureRecognizer *)gesture
 {
+    if (!self.gestureEnabled) {
+        return;
+    }
+    
     if( gesture.state == UIGestureRecognizerStateBegan )
     {
         self.previousLocation = CGPointZero;
@@ -290,6 +314,10 @@ BOOL firstTimeSlideVC = YES;
 
 - (void)addTapViewOverlay
 {
+    if (!self.gestureEnabled) {
+        return;
+    }
+    
     if( self.mainTapView == nil )
     {
         _mainTapView = [[UIView alloc] initWithFrame:self.mainViewController.view.bounds];
@@ -350,7 +378,7 @@ BOOL firstTimeSlideVC = YES;
         theFrame = self.mainViewController.view.frame;
         theFrame.origin.x = self.leftViewController.view.frame.size.width - kSlideOverlapWidth;
 //        self.mainViewController.view.frame = transformedFrame;
-        theFrame.origin.x = theFrame.size.width - kSlideOverlapWidth;
+//        theFrame.origin.x = theFrame.size.width - kSlideOverlapWidth;
         self.mainViewController.view.frame = theFrame;
     } completion:^(BOOL finished) {
         [self addTapViewOverlay];
@@ -375,6 +403,11 @@ BOOL firstTimeSlideVC = YES;
 
 - (IBAction)showMainViewController:(id)sender
 {
+    if (!self.gestureEnabled) {
+        return;
+    }
+    
+    // Open?
     if( self.mainViewController.view.frame.origin.x != CGPointZero.x )
     {
         [UIView animateWithDuration:kSlideSpeed delay:0.0f options:UIViewAnimationOptionCurveEaseOut animations:^(void){
@@ -382,16 +415,12 @@ BOOL firstTimeSlideVC = YES;
             //            theFrame.origin = CGPointZero;
             CGRect viewRect = self.originalFrame;
             
-            //            CGSize scales = CGSizeMake(viewRect.size.width/fromRect.size.width, viewRect.size.height/fromRect.size.height);
-//            CGSize scales = CGSizeMake(1, 1);
-//            CGPoint offset = CGPointMake(CGRectGetMidX(viewRect) - CGRectGetMidX(fromRect), CGRectGetMidY(viewRect) - CGRectGetMidY(fromRect));
-//            CGAffineTransform transform = CGAffineTransformMake(scales.width, 0, 0, scales.height, offset.x, offset.y);
-//            
-//            self.mainViewController.view.transform = transform;
-            self.mainViewController.view.frame = self.originalFrame; //theFrame;
+            self.mainViewController.view.x = CGPointZero.x;
+//            self.mainViewController.view.frame = self.originalFrame; //theFrame;
         } completion:^(BOOL finished) {
             [self removeTapViewOverlay];
         }];
+    // Closed? - Add a Fade
     } else {
         //fade transition
         CATransition *transition = [CATransition animation];
@@ -403,5 +432,79 @@ BOOL firstTimeSlideVC = YES;
         [self removeTapViewOverlay];
     }
 }
+
+#pragma mark -
+#pragma mark ORIENTATION
+
+-(void)willRotateToInterfaceOrientation:(UIInterfaceOrientation)orientation duration:(NSTimeInterval)duration {
+    [UIView animateWithDuration:duration animations:^(void){
+        if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+            if (UIInterfaceOrientationIsPortrait(orientation)) {
+                self.gestureEnabled = YES;
+                [self showMainViewController:nil];
+            } else if (UIInterfaceOrientationIsLandscape(orientation)){
+                self.gestureEnabled = NO;
+                [self removeTapViewOverlay];
+                [self showLeftViewController:nil];
+            }
+        }
+        // Resize
+        [self resizeViews:orientation];
+        // Drawer Button
+        [self updateDrawerButton:orientation];
+        
+        DLog(@"Current Width: %f", self.mainViewController.view.frame.size.width);
+        DLog(@"Current Height: %f", self.mainViewController.view.frame.size.height);
+    }];
+}
+
+- (void) didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
+{
+//    [self resizeViews:self.interfaceOrientation];
+}
+
+- (void) resizeViews:(UIInterfaceOrientation)orientation
+{
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        CGSize dimens = [UIApplication sizeInOrientation:orientation];
+        UIScreen *screen = [UIScreen mainScreen];
+        UIView *containerView = self.mainViewController.view.superview;
+//        UIWindow *window = [[UIApplication sharedApplication] keyWindow];
+        CGFloat width = dimens.width;//containerView.frame.size.width;
+        CGFloat height = dimens.height;//containerView.frame.size.height;
+        
+        DLog(@"Dimens Width: %f", dimens.width);
+        DLog(@"Window Width: %f", screen.applicationFrame.size.width);
+        DLog(@"Window Height: %f", screen.applicationFrame.size.height);
+        DLog(@"Container Width: %f", containerView.frame.size.width);
+        DLog(@"Container Height: %f", containerView.frame.size.height);
+        
+        if (UIInterfaceOrientationIsPortrait(orientation)) {
+        // Portrait
+            [self.mainViewController.view setFrame:CGRectMake(self.mainViewController.view.frame.origin.x, self.mainViewController.view.frame.origin.y, width, height)];
+            self.originalFrame = self.mainViewController.view.frame;
+        } else if (UIInterfaceOrientationIsLandscape(orientation)){
+        // Landscape
+            CGFloat offset = self.leftViewController.view.frame.size.width - kSlideOverlapWidth;
+            [self.mainViewController.view setFrame:CGRectMake(offset, self.mainViewController.view.frame.origin.y, width - offset, height)];
+        }
+    }
+}
+
+- (void) updateDrawerButton:(UIInterfaceOrientation)orientation
+{
+    if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        if (UIInterfaceOrientationIsPortrait(orientation)) {
+            // Portrait
+            self.menuBarButtonItem.customView.hidden = NO;
+        } else if (UIInterfaceOrientationIsLandscape(orientation)){
+            // Landscape
+            self.menuBarButtonItem.customView.hidden = YES;
+        }
+    }
+}
+
+#pragma mark -
+#pragma mark IPAD
 
 @end
