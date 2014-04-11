@@ -638,7 +638,7 @@ BOOL firstTimeSlideVC = YES;
 
 - (void) transformMainView:(UIView *)view forPercentage:(CGFloat)percentage
 {
-    CGFloat destinationWidth = self.view.width - kSlideOverlapWidth;
+    CGFloat destinationWidth = self.leftViewController.view.width - kSlideOverlapWidth;
 //    destinationWidth -= 110;
     CGFloat currentLocation = MIN(destinationWidth, (percentage / 100) * destinationWidth);
 
@@ -670,7 +670,7 @@ BOOL firstTimeSlideVC = YES;
 - (CGFloat) percentageForCoordinate:(CGPoint)dragLocation
 {
     CGFloat x = dragLocation.x;
-    CGFloat actionableWidth = self.view.width - kSlideOverlapWidth;
+    CGFloat actionableWidth = self.leftViewController.view.width - kSlideOverlapWidth;
     CGFloat percentage = 100 * MIN(1, x / actionableWidth);
     return percentage;
 }
