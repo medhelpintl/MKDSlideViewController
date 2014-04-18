@@ -135,7 +135,7 @@
     
     // Orient
     UIInterfaceOrientation interfaceOrientation = self.interfaceOrientation;
-    [self willRotateToInterfaceOrientation:interfaceOrientation duration:0.3f];
+    [self willRotateToInterfaceOrientation:interfaceOrientation duration:0.1f];
 }
 
 BOOL firstTimeSlideVC = YES;
@@ -548,7 +548,6 @@ BOOL firstTimeSlideVC = YES;
 
 - (void) didRotateFromInterfaceOrientation:(UIInterfaceOrientation)fromInterfaceOrientation
 {
-//    [self resizeViews:self.interfaceOrientation];
 }
 
 - (void) resizeViews:(UIInterfaceOrientation)orientation
@@ -585,9 +584,14 @@ BOOL firstTimeSlideVC = YES;
         if (UIInterfaceOrientationIsPortrait(orientation)) {
             // Portrait
             self.menuBarButtonItem.customView.hidden = NO;
+            self.menuBarButtonItem.customView.alpha = 1.0f;
+            self.rootViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
+
         } else if (UIInterfaceOrientationIsLandscape(orientation)){
             // Landscape
             self.menuBarButtonItem.customView.hidden = YES;
+            self.menuBarButtonItem.customView.alpha = 0.0f;
+            self.rootViewController.navigationItem.leftBarButtonItem = nil;
         }
     }
 }
