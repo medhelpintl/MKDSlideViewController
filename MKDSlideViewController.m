@@ -81,7 +81,7 @@
         if (SYSTEM_VERSION_GREATER_THAN_OR_EQUAL_TO(@"7")) {
             self.mainViewController.view.frame = containerView.bounds;
             self.mainViewController.view.y += 20;
-            self.mainViewController.view.height -= 20;
+//            self.mainViewController.view.height -= 20;
         }
         
         self.originalFrame = self.mainViewController.view.frame;
@@ -581,17 +581,24 @@ BOOL firstTimeSlideVC = YES;
 - (void) updateDrawerButton:(UIInterfaceOrientation)orientation
 {
     if (UI_USER_INTERFACE_IDIOM() == UIUserInterfaceIdiomPad) {
+        UIViewController *topVC = [[self.rootNavViewController viewControllers] objectAtIndex:0];
         if (UIInterfaceOrientationIsPortrait(orientation)) {
             // Portrait
             self.menuBarButtonItem.customView.hidden = NO;
             self.menuBarButtonItem.customView.alpha = 1.0f;
-            self.rootViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
+
+            topVC.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
+//            self.mainViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
+//            self.rootViewController.navigationItem.leftBarButtonItem = self.menuBarButtonItem;
 
         } else if (UIInterfaceOrientationIsLandscape(orientation)){
             // Landscape
             self.menuBarButtonItem.customView.hidden = YES;
             self.menuBarButtonItem.customView.alpha = 0.0f;
-            self.rootViewController.navigationItem.leftBarButtonItem = nil;
+            
+            topVC.navigationItem.leftBarButtonItem = nil;
+//            self.mainViewController.navigationItem.leftBarButtonItem = nil;
+//            self.rootViewController.navigationItem.leftBarButtonItem = nil;
         }
     }
 }
